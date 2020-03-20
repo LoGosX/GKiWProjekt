@@ -65,6 +65,41 @@ float DE(vec3 z)
   return length(z)-0.3;             // sphere DE
 }
 
+// Mandelbulb distance estimation:
+// http://blog.hvidtfeldts.net/index.php/2011/09/distance-estimated-3d-fractals-v-the-mandelbulb-different-de-approximations/
+vec2 SceneInfo(vec3 position) {
+    vec3 z = position;
+	float dr = 1.0;
+	float r = 0.0;
+    int iterations = 0;
+    float power = 4;
+
+	for (int i = 0; i < 15 ; i++) {
+        iterations = i;
+		r = length(z);
+
+		if (r>2) {
+            break;
+        }
+        
+		// convert to polar coordinates
+		float theta = acos(z.z/r);
+		float phi = atan(z.y,z.x);
+		dr =  pow( r, power-1.0)*power*dr + 1.0;
+
+		// scale and rotate the point
+		float zr = pow( r,power);
+		theta = theta*power;
+		phi = phi*power;
+		
+		// convert back to cartesian coordinates
+		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z+=position;
+	}
+    float dst = 0.5*log(r)*r/dr;
+	return vec2(iterations,dst*1);
+}
+
 void main()
 {
     vec3 eye = camera_position;
@@ -85,7 +120,7 @@ void main()
     vec4 color = vec4(0.0); // Sky color
 
     float t = 0.0;
-    const int maxSteps = 64;
+    const int maxSteps = 128;
     for(int i = 0; i < maxSteps; ++i)
     {
         vec3 p = ro + rd * t;
@@ -107,9 +142,11 @@ void main()
         //        break;
         //    }
         //}
-        float d = DE(p);
+        vec2 res = SceneInfo(p);
+        float d = res.y;
+        float c = res.x;
         if(d < g_rmEpsilon) {
-            color = vec4(0,1,1,1);
+            color = vec4(0,0,c,(maxSteps - i) / maxSteps);
             break;
         }
 
