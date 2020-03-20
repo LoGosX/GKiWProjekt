@@ -82,6 +82,8 @@ void ShaderProgram::initShaders()
 	spLambert = new ShaderProgram("v_lambert.glsl", NULL, "f_lambert.glsl");
 	spConstant = new ShaderProgram("v_constant.glsl", NULL, "f_constant.glsl");
 	basicShader = new ShaderProgram("basic_vertex_shader.glsl", NULL, "basic_fragment_shader.glsl");
+	waveShader = new ShaderProgram("wave_vertex.glsl", NULL, "f_constant.glsl");
+	raymarch2D = new ShaderProgram("v_constant.glsl", NULL, "raymarch2D_fragment.glsl");
 }
 
 void ShaderProgram::freeShaders()
@@ -89,20 +91,23 @@ void ShaderProgram::freeShaders()
 	delete spLambert;
 	delete spConstant;
 	delete basicShader;
+	delete waveShader;
+	delete raymarch2D;
 }
 
 void ShaderProgram::uniformMatrix4f(const std::string& uniform_name, float* data)
 {
-	auto location = uniforms.find(uniform_name);
-	GLuint uniform_location;
-	if (location == uniforms.end()) {
-		uniform_location = u(uniform_name.c_str());
-		uniforms.emplace(uniform_name, uniform_location);
-	}
-	else {
-		uniform_location = location->second;
-	}
-	glUniformMatrix4fv(uniform_location, 1, 0, data);
+	glUniformMatrix4fv(u(uniform_name), 1, 0, data);
+}
+
+void ShaderProgram::uniform2f(const std::string& uniform_name, float v1, float v2)
+{
+	glUniform2f(u(uniform_name), v1, v2);
+}
+
+void ShaderProgram::uniform3f(const std::string& uniform_name, float v1, float v2, float v3)
+{
+	glUniform3f(u(uniform_name), v1, v2, v3);
 }
 
 ShaderProgram::ShaderProgram(const char* vertexShaderFile,const char* geometryShaderFile,const char* fragmentShaderFile) {
@@ -170,9 +175,22 @@ void ShaderProgram::use() {
 	glUseProgram(shaderProgram);
 }
 
+GLuint ShaderProgram::u(const std::string& variableName) {
+	return u(variableName.c_str());
+}
+
 //Pobierz numer slotu odpowiadającego zmiennej jednorodnej o nazwie variableName
 GLuint ShaderProgram::u(const char* variableName) {
-	return glGetUniformLocation(shaderProgram, variableName);
+	auto location = uniforms.find(variableName);
+	GLuint uniform_location;
+	if (location == uniforms.end()) {
+		uniform_location = glGetUniformLocation(shaderProgram, variableName);
+		uniforms.emplace(variableName, uniform_location);
+	}
+	else {
+		uniform_location = location->second;
+	}
+	return uniform_location;
 }
 
 //Pobierz numer slotu odpowiadającego atrybutowi o nazwie variableName

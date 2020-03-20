@@ -3,6 +3,6 @@
 class BasicDrawableObject :
 	public DrawableObject
 {
-	void draw(const Camera& camera) override;
+	void setShaderUniforms(const Camera& camera) override;
 };
 

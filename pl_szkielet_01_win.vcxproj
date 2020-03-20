@@ -30,8 +30,12 @@
     <ClInclude Include="ExampleScene.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="InputHandler.h" />
     <ClInclude Include="lodepng.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="Plane.h" />
+    <ClInclude Include="Raymarching2DSphereDrawableObject.h" />
+    <ClInclude Include="RaymarchScene.h" />
     <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
@@ -50,9 +54,13 @@
     <ClCompile Include="ExampleScene.cpp" />
     <ClCompile Include="GameEngine.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="main_file.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Raymarching2DSphereDrawableObject.cpp" />
+    <ClCompile Include="RaymarchScene.cpp" />
     <ClCompile Include="RenderSystem.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneManager.cpp" />
@@ -68,8 +76,11 @@
     <None Include="basic_vertex_shader.glsl" />
     <None Include="f_constant.glsl" />
     <None Include="f_lambert.glsl" />
+    <None Include="raymarch2D_fragment.glsl" />
+    <None Include="raymarch_vertex.glsl" />
     <None Include="v_constant.glsl" />
     <None Include="v_lambert.glsl" />
+    <None Include="wave_vertex.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

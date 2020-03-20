@@ -12,6 +12,6 @@ public:
 	Entity entity;
 	ShaderProgram* shader;
 	Models::Model* model;
-	virtual void draw(const Camera& camera) = 0;
+	virtual void setShaderUniforms(const Camera& camera) = 0;
 };
 

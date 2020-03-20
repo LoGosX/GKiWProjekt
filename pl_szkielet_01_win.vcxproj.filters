@@ -81,6 +81,18 @@
     <ClInclude Include="BasicDrawableObject.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
+    <ClInclude Include="Raymarching2DSphereDrawableObject.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="RaymarchScene.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Plane.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="InputHandler.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cube.cpp">
@@ -140,6 +152,18 @@
     <ClCompile Include="BasicDrawableObject.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
+    <ClCompile Include="Raymarching2DSphereDrawableObject.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="RaymarchScene.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="Plane.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="InputHandler.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="f_constant.glsl">
@@ -158,6 +182,15 @@
       <Filter>Pliki zasobów</Filter>
     </None>
     <None Include="basic_fragment_shader.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="wave_vertex.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="raymarch_vertex.glsl">
+      <Filter>Pliki zasobów</Filter>
+    </None>
+    <None Include="raymarch2D_fragment.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
   </ItemGroup>

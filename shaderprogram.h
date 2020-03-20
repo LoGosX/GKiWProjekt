@@ -42,6 +42,7 @@ public:
 	ShaderProgram(const char* vertexShaderFile,const char* geometryShaderFile,const char* fragmentShaderFile);
 	~ShaderProgram();
 	void use(); //Włącza wykorzystywanie programu cieniującego
+	GLuint u(const std::string& variableName); //Pobiera numer slotu związanego z daną zmienną jednorodną
 	GLuint u(const char* variableName); //Pobiera numer slotu związanego z daną zmienną jednorodną
 	GLuint a(const char* variableName); //Pobiera numer slotu związanego z danym atrybutem
 
@@ -50,8 +51,12 @@ public:
 	inline static ShaderProgram* spConstant;
 	inline static ShaderProgram* spLambert;
 	inline static ShaderProgram* basicShader;
+	inline static ShaderProgram* waveShader;
+	inline static ShaderProgram* raymarch2D;
 
 	void uniformMatrix4f(const std::string& uniform_name, float* data);
+	void uniform2f(const std::string& uniform_name, float v1, float v2);
+	void uniform3f(const std::string& uniform_name, float v1, float v2, float v3);
 };
 
 ;

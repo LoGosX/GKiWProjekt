@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "SceneManager.h"
 #include "ExampleScene.h"
+#include "RaymarchScene.h"
 #include <cmath>
 #include "Input.h"
 #include "Timer.h"
@@ -18,7 +19,13 @@ void GameEngine::initialize()
 	_input = new Input(_window);
 	_camera = _render_system->camera();
 	_scene_manager = new SceneManager;
-	_scene_manager->setCurrentScene(new ExampleScene(_camera, _window, _input));
+	int choice;
+	fprintf(stdout, "Choose scene to load:\n1. Example Scene\n2. Raymarch scene\nYour choice: ");
+	scanf_s("%d", &choice);
+	if(choice == 1)
+		_scene_manager->setCurrentScene(new ExampleScene(_camera, _window, _input));
+	else
+		_scene_manager->setCurrentScene(new RaymarchScene(_camera, _window, _input));
 	_scene_manager->getCurrentScene()->setup();
 }
 
