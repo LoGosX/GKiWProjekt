@@ -14,6 +14,7 @@ void RaymarchScene::setup()
 }
 void RaymarchScene::update(double dt)
 {
+
 	input_h->handleCamera(camera(), window(), input(), dt);
 	input_h->handleMouse(camera(), window(), input(), dt);
 	fprintf(stdout, "Position(%.3f %.3f %.3f), Rotation(%.3f %.3f %.3f)\n", camera()->position.x, camera()->position.y, camera()->position.z, camera()->rotation.x, camera()->rotation.y, camera()->rotation.z);

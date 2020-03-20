@@ -8,7 +8,7 @@ uniform vec3 camera_up = vec3(0, 1, 0);
 uniform vec3 camera_right = vec3(1, 0, 0);
 
 uniform float sphere_radius = 5;
-uniform vec3 sphere_position = vec3(0, 5, 5);
+uniform vec3 sphere_position = vec3(0, 5, 2.5);
 
 uniform vec3 plane_position = vec3(0, -2, 0);
 
@@ -16,6 +16,9 @@ uniform float fov = 45;
 
 uniform vec2 g_resolution;
 uniform float g_rmEpsilon = 1e-5;
+
+
+vec3 light_direction = vec3(0, -1, 1);
 
 out vec4 glColor;
 
@@ -59,11 +62,25 @@ vec3 floor_color(in vec3 p)
    }
 }
 
-float DE(vec3 z)
+float DExy(vec3 z)
 {
   z.xy = mod((z.xy),1.0)-vec2(0.5); // instance on xy-plane
   return length(z)-0.3;             // sphere DE
 }
+float DExyz(vec3 z)
+{
+  z.xyz = mod((z.xyz),1.0)-vec3(0.5); // instance on xy-plane
+  return length(z)-0.3;             // sphere DE
+}
+
+vec3 sphereNormal(vec3 p) {
+    float epsilon = g_rmEpsilon;
+    float x = DExyz(vec3(p.x+epsilon,p.y,p.z)) - DExyz(vec3(p.x-epsilon,p.y,p.z));
+    float y = DExyz(vec3(p.x,p.y+epsilon,p.z)) - DExyz(vec3(p.x,p.y-epsilon,p.z));
+    float z = DExyz(vec3(p.x,p.y,p.z+epsilon)) - DExyz(vec3(p.x,p.y,p.z-epsilon));
+    return normalize(vec3(x,y,z));
+}
+
 
 // Mandelbulb distance estimation:
 // http://blog.hvidtfeldts.net/index.php/2011/09/distance-estimated-3d-fractals-v-the-mandelbulb-different-de-approximations/
@@ -108,6 +125,13 @@ float epsilon = g_rmEpsilon;
     return normalize(vec3(x,y,z));
 }
 
+float opSmoothUnion( float d1, float d2, float k ) {
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return mix( d2, d1, h ) - k*h*(1.0-h); 
+   }
+
+#define MODE 3
+
 void main()
 {
     vec3 eye = camera_position;
@@ -128,13 +152,16 @@ void main()
     vec4 color = vec4(0.0); // Sky color
 
     float t = 0.0;
-    const int maxSteps = 128;
+    const int maxSteps = 64;
     for(int i = 0; i < maxSteps; ++i)
     {
         vec3 p = ro + rd * t;
+        
+
+        #if MODE == 1
         float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
         float dp = sdPlane(p - plane_position); // Distance to plane
-        float d = min(ds, dp);
+        float d = opSmoothUnion(ds, dp, 1);
         if(d < g_rmEpsilon)
         {
             if(ds < g_rmEpsilon) 
@@ -150,25 +177,48 @@ void main()
                 break;
             }
         }
-        //vec2 sceneInfo = SceneInfo(p);
-        //float d = sceneInfo.y;
-        //float dst = d;
-        //// Ray has hit a surface
-        //if (dst <= g_rmEpsilon) {
-        //    float escapeIterations = sceneInfo.x;
-        //    vec3 normal = EstimateNormal(ro - rd*g_rmEpsilon*2);
-        //
-        //    vec3 _LightDirection = vec3(0, -1, 0);
-        //    float colourAMix = 1;
-        //    float colourBMix = 1;
-        //
-        //    float colourA = clamp(dot(normal*.5+.5,-_LightDirection), 0, 1);
-        //    float colourB = clamp(maxSteps/16.0, 0, 1);
-        //    vec3 colourMix = vec3(clamp(colourA * colourAMix + colourB * colourBMix, 0, 1));
-        //
-        //    color = vec4(colourMix.xyz,1);
-        //    break;
-        //}
+        #endif
+        #if MODE == 2
+        float d1 = DExy(p);
+        float d2 = DExy(p + vec3(0, 0, 0.75));
+        float d = opSmoothUnion(d1, d2, 0.5);
+        if(d < g_rmEpsilon) {
+            vec3 normal = sphereNormal(p);
+            float cosinus = dot(normal, light_direction);
+            color = vec4(vec3(clamp(-cosinus, 0, 1)), 1);
+            break;
+        }
+        #endif
+        #if MODE == 3
+        float d = DExyz(p);
+        if(d < g_rmEpsilon) {
+            vec3 normal = sphereNormal(p);
+            float cosinus = dot(normal, light_direction);
+            color = vec4(vec3(clamp(-cosinus, 0, 1)), 1);
+            break;
+        }
+        #endif
+        #if MODE == 4
+        vec2 sceneInfo = SceneInfo(p);
+        float d = sceneInfo.y;
+        float dst = d;
+        // Ray has hit a surface
+        if (dst <= g_rmEpsilon) {
+            float escapeIterations = sceneInfo.x;
+            vec3 normal = EstimateNormal(ro - rd*g_rmEpsilon*2);
+        
+            vec3 _LightDirection = vec3(0, -1, 0);
+            float colourAMix = 1;
+            float colourBMix = 1;
+        
+            float colourA = clamp(dot(normal*.5+.5,-_LightDirection), 0, 1);
+            float colourB = clamp(maxSteps/16.0, 0, 1);
+            vec3 colourMix = vec3(clamp(colourA * colourAMix + colourB * colourBMix, 0, 1));
+        
+            color = vec4(colourMix.xyz,1);
+            break;
+        }
+        #endif
 
         t += d;
     }

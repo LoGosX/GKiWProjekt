@@ -76,6 +76,8 @@
     <None Include="basic_vertex_shader.glsl" />
     <None Include="f_constant.glsl" />
     <None Include="f_lambert.glsl" />
+    <None Include="marching_fragment.glsl" />
+    <None Include="marching_vertex.glsl" />
     <None Include="raymarch2D_fragment.glsl" />
     <None Include="raymarch_vertex.glsl" />
     <None Include="v_constant.glsl" />

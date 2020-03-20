@@ -95,7 +95,7 @@ void ShaderProgram::freeShaders()
 	delete raymarch2D;
 }
 
-void ShaderProgram::uniformMatrix4f(const std::string& uniform_name, float* data)
+void ShaderProgram::uniformMatrix4f(const std::string& uniform_name, const float* data)
 {
 	glUniformMatrix4fv(u(uniform_name), 1, 0, data);
 }

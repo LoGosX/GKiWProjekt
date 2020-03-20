@@ -54,7 +54,7 @@ public:
 	inline static ShaderProgram* waveShader;
 	inline static ShaderProgram* raymarch2D;
 
-	void uniformMatrix4f(const std::string& uniform_name, float* data);
+	void uniformMatrix4f(const std::string& uniform_name, const float* data);
 	void uniform2f(const std::string& uniform_name, float v1, float v2);
 	void uniform3f(const std::string& uniform_name, float v1, float v2, float v3);
 };
