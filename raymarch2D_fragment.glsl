@@ -59,6 +59,12 @@ vec3 floor_color(in vec3 p)
    }
 }
 
+float DE(vec3 z)
+{
+  z.xy = mod((z.xy),1.0)-vec2(0.5); // instance on xy-plane
+  return length(z)-0.3;             // sphere DE
+}
+
 void main()
 {
     vec3 eye = camera_position;
@@ -83,23 +89,28 @@ void main()
     for(int i = 0; i < maxSteps; ++i)
     {
         vec3 p = ro + rd * t;
-        float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
-        float dp = sdPlane(p - plane_position); // Distance to plane
-        float d = min(ds, dp);
-        if(d < g_rmEpsilon)
-        {
-            if(ds < g_rmEpsilon) 
-            {
-                color = vec4(float(maxSteps - i) / 2 / maxSteps, 0, float(i) / maxSteps, 1); // Sphere color
-                //vec3 grad = gradApprox(p, sphere_position, radius);
-                //color = vec4(grad, 1);
-                break;
-            }
-            if(dp > 0 && dp < g_rmEpsilon)
-            {
-                color = vec4(floor_color(p), 1);
-                break;
-            }
+        //float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
+        //float dp = sdPlane(p - plane_position); // Distance to plane
+        //float d = min(ds, dp);
+        //if(d < g_rmEpsilon)
+        //{
+        //    if(ds < g_rmEpsilon) 
+        //    {
+        //        color = vec4(float(maxSteps - i) / 2 / maxSteps, 0, float(i) / maxSteps, 1); // Sphere color
+        //        //vec3 grad = gradApprox(p, sphere_position, radius);
+        //        //color = vec4(grad, 1);
+        //        break;
+        //    }
+        //    if(dp > 0 && dp < g_rmEpsilon)
+        //    {
+        //        color = vec4(floor_color(p), 1);
+        //        break;
+        //    }
+        //}
+        float d = DE(p);
+        if(d < g_rmEpsilon) {
+            color = vec4(0,1,1,1);
+            break;
         }
 
         t += d;

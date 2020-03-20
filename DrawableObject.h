@@ -14,4 +14,3 @@ public:
 	Models::Model* model;
 	virtual void setShaderUniforms(const Camera& camera) = 0;
 };
-

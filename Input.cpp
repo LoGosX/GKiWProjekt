@@ -10,7 +10,6 @@ void Input::update()
 Input::Input(Window* window) : _window(window->windowHandle()), _mouse_position(.5, .5) {
 	_keys.fill(false);
 
-	
 	glfwSetWindowUserPointer(window->windowHandle(), this);
 	glfwSetKeyCallback(_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 		auto self = static_cast<Input*>(glfwGetWindowUserPointer(window));
