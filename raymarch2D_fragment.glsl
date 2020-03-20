@@ -15,7 +15,7 @@ uniform vec3 plane_position = vec3(0, -2, 0);
 uniform float fov = 45;
 
 uniform vec2 g_resolution;
-uniform float g_rmEpsilon = 1e-3;
+uniform float g_rmEpsilon = 1e-5;
 
 out vec4 glColor;
 
@@ -72,9 +72,9 @@ vec2 SceneInfo(vec3 position) {
 	float dr = 1.0;
 	float r = 0.0;
     int iterations = 0;
-    float power = 4;
+    float power = 2;
 
-	for (int i = 0; i < 15 ; i++) {
+	for (int i = 0; i < 25 ; i++) {
         iterations = i;
 		r = length(z);
 
@@ -84,7 +84,7 @@ vec2 SceneInfo(vec3 position) {
         
 		// convert to polar coordinates
 		float theta = acos(z.z/r);
-		float phi = atan(z.y,z.x);
+		float phi = atan(z.x, z.y);
 		dr =  pow( r, power-1.0)*power*dr + 1.0;
 
 		// scale and rotate the point
@@ -98,6 +98,14 @@ vec2 SceneInfo(vec3 position) {
 	}
     float dst = 0.5*log(r)*r/dr;
 	return vec2(iterations,dst*1);
+}
+
+vec3 EstimateNormal(vec3 p) {
+float epsilon = g_rmEpsilon;
+    float x = SceneInfo(vec3(p.x+epsilon,p.y,p.z)).y - SceneInfo(vec3(p.x-epsilon,p.y,p.z)).y;
+    float y = SceneInfo(vec3(p.x,p.y+epsilon,p.z)).y - SceneInfo(vec3(p.x,p.y-epsilon,p.z)).y;
+    float z = SceneInfo(vec3(p.x,p.y,p.z+epsilon)).y - SceneInfo(vec3(p.x,p.y,p.z-epsilon)).y;
+    return normalize(vec3(x,y,z));
 }
 
 void main()
@@ -124,31 +132,43 @@ void main()
     for(int i = 0; i < maxSteps; ++i)
     {
         vec3 p = ro + rd * t;
-        //float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
-        //float dp = sdPlane(p - plane_position); // Distance to plane
-        //float d = min(ds, dp);
-        //if(d < g_rmEpsilon)
-        //{
-        //    if(ds < g_rmEpsilon) 
-        //    {
-        //        color = vec4(float(maxSteps - i) / 2 / maxSteps, 0, float(i) / maxSteps, 1); // Sphere color
-        //        //vec3 grad = gradApprox(p, sphere_position, radius);
-        //        //color = vec4(grad, 1);
-        //        break;
-        //    }
-        //    if(dp > 0 && dp < g_rmEpsilon)
-        //    {
-        //        color = vec4(floor_color(p), 1);
-        //        break;
-        //    }
-        //}
-        vec2 res = SceneInfo(p);
-        float d = res.y;
-        float c = res.x;
-        if(d < g_rmEpsilon) {
-            color = vec4(0,0,c,(maxSteps - i) / maxSteps);
-            break;
+        float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
+        float dp = sdPlane(p - plane_position); // Distance to plane
+        float d = min(ds, dp);
+        if(d < g_rmEpsilon)
+        {
+            if(ds < g_rmEpsilon) 
+            {
+                color = vec4(float(maxSteps - i) / 2 / maxSteps, 0, float(i) / maxSteps, 1); // Sphere color
+                //vec3 grad = gradApprox(p, sphere_position, radius);
+                //color = vec4(grad, 1);
+                break;
+            }
+            if(dp > 0 && dp < g_rmEpsilon)
+            {
+                color = vec4(floor_color(p), 1);
+                break;
+            }
         }
+        //vec2 sceneInfo = SceneInfo(p);
+        //float d = sceneInfo.y;
+        //float dst = d;
+        //// Ray has hit a surface
+        //if (dst <= g_rmEpsilon) {
+        //    float escapeIterations = sceneInfo.x;
+        //    vec3 normal = EstimateNormal(ro - rd*g_rmEpsilon*2);
+        //
+        //    vec3 _LightDirection = vec3(0, -1, 0);
+        //    float colourAMix = 1;
+        //    float colourBMix = 1;
+        //
+        //    float colourA = clamp(dot(normal*.5+.5,-_LightDirection), 0, 1);
+        //    float colourB = clamp(maxSteps/16.0, 0, 1);
+        //    vec3 colourMix = vec3(clamp(colourA * colourAMix + colourB * colourBMix, 0, 1));
+        //
+        //    color = vec4(colourMix.xyz,1);
+        //    break;
+        //}
 
         t += d;
     }
