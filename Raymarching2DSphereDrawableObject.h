@@ -9,7 +9,7 @@ class Raymarching2DSphereDrawableObject :
 public:
 	Raymarching2DSphereDrawableObject(Window* window);
 
-	void setShaderUniforms(const Camera& camera) override;
+	void setShaderUniforms(const Camera& camera, float time) override;
 
 private:
 	Window* _window;

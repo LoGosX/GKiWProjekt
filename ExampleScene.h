@@ -12,7 +12,7 @@ public:
 	using Scene::Scene; //inherit Scene's constructor
 
 	void setup() override;
-	void update(double delta_time) override;
+	void update() override;
 	void draw() override;
 
 private:

@@ -43,14 +43,13 @@ void ExampleScene::setup()
 	drawable_objects.emplace_back(wave);
 }
 
-void ExampleScene::update(double delta_time)
+void ExampleScene::update()
 {
 	//teapot_entity.position = { -5, 0, 0 };
-	input_handler->handleCamera(camera(), window(), input(), delta_time);
-	input_handler->handleMouse(camera(), window(), input(), delta_time);
+	input_handler->handleCamera(camera(), window(), input(), deltaTime());
+	input_handler->handleMouse(camera(), window(), input(), deltaTime());
 
-	t += delta_time;
-	wave->entity.position.x += 0.5 * delta_time;
+	wave->entity.position.x += 0.5 * deltaTime();
 
 	fprintf(stdout, "Position(%.3f %.3f %.3f), Rotation(%.3f %.3f %.3f)\n", camera()->position.x, camera()->position.y, camera()->position.z, camera()->rotation.x, camera()->rotation.y, camera()->rotation.z);
 }
@@ -58,7 +57,7 @@ void ExampleScene::update(double delta_time)
 void ExampleScene::draw() {
 	for (int i = 0; i < drawable_objects.size(); i++) {
 		drawable_objects[i]->shader->use();
-		drawable_objects[i]->setShaderUniforms(*camera());
+		drawable_objects[i]->setShaderUniforms(*camera(), t);
 		drawable_objects[i]->model->drawSolid(false);
 	}
 }

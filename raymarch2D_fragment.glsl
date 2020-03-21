@@ -17,6 +17,9 @@ uniform float fov = 45;
 uniform vec2 g_resolution;
 uniform float g_rmEpsilon = 1e-5;
 
+uniform float time = 0;
+
+#define BACKGROUND_COLOR vec3(0.6,0.8,1.0)
 
 vec3 light_direction = vec3(0, -1, 1);
 
@@ -73,7 +76,7 @@ float DExyz(vec3 z)
   return length(z)-0.3;             // sphere DE
 }
 
-vec3 sphereNormal(vec3 p) {
+vec3 sphereNormalxyz(vec3 p) {
     float epsilon = g_rmEpsilon;
     float x = DExyz(vec3(p.x+epsilon,p.y,p.z)) - DExyz(vec3(p.x-epsilon,p.y,p.z));
     float y = DExyz(vec3(p.x,p.y+epsilon,p.z)) - DExyz(vec3(p.x,p.y-epsilon,p.z));
@@ -81,56 +84,71 @@ vec3 sphereNormal(vec3 p) {
     return normalize(vec3(x,y,z));
 }
 
-
-// Mandelbulb distance estimation:
-// http://blog.hvidtfeldts.net/index.php/2011/09/distance-estimated-3d-fractals-v-the-mandelbulb-different-de-approximations/
-vec2 SceneInfo(vec3 position) {
-    vec3 z = position;
-	float dr = 1.0;
-	float r = 0.0;
-    int iterations = 0;
-    float power = 2;
-
-	for (int i = 0; i < 25 ; i++) {
-        iterations = i;
-		r = length(z);
-
-		if (r>2) {
-            break;
-        }
-        
-		// convert to polar coordinates
-		float theta = acos(z.z/r);
-		float phi = atan(z.x, z.y);
-		dr =  pow( r, power-1.0)*power*dr + 1.0;
-
-		// scale and rotate the point
-		float zr = pow( r,power);
-		theta = theta*power;
-		phi = phi*power;
-		
-		// convert back to cartesian coordinates
-		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
-		z+=position;
-	}
-    float dst = 0.5*log(r)*r/dr;
-	return vec2(iterations,dst*1);
-}
-
-vec3 EstimateNormal(vec3 p) {
-float epsilon = g_rmEpsilon;
-    float x = SceneInfo(vec3(p.x+epsilon,p.y,p.z)).y - SceneInfo(vec3(p.x-epsilon,p.y,p.z)).y;
-    float y = SceneInfo(vec3(p.x,p.y+epsilon,p.z)).y - SceneInfo(vec3(p.x,p.y-epsilon,p.z)).y;
-    float z = SceneInfo(vec3(p.x,p.y,p.z+epsilon)).y - SceneInfo(vec3(p.x,p.y,p.z-epsilon)).y;
+vec3 sphereNormalxy(vec3 p) {
+    float epsilon = g_rmEpsilon;
+    float x = DExy(vec3(p.x+epsilon,p.y,p.z)) - DExy(vec3(p.x-epsilon,p.y,p.z));
+    float y = DExy(vec3(p.x,p.y+epsilon,p.z)) - DExy(vec3(p.x,p.y-epsilon,p.z));
+    float z = DExy(vec3(p.x,p.y,p.z+epsilon)) - DExy(vec3(p.x,p.y,p.z-epsilon));
     return normalize(vec3(x,y,z));
 }
 
-float opSmoothUnion( float d1, float d2, float k ) {
-    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
-    return mix( d2, d1, h ) - k*h*(1.0-h); 
-   }
 
-#define MODE 3
+float mandelbulbDE(vec3 pos) {
+	vec3 z = pos;
+	float dr = 1.0;
+	float r = 0.0;
+    int Iterations = 10;
+    float Power = 8 + cos(time / (3.14 * 3));
+    float Bailout = 1.5;
+	for (int i = 0; i < Iterations ; i++) {
+		r = length(z);
+		if (r>Bailout) break;
+		
+		// convert to polar coordinates
+		float theta = acos(z.z/r);
+		float phi = atan(z.y,z.x);
+		dr =  pow( r, Power-1.0)*Power*dr + 1.0;
+		
+		// scale and rotate the point
+		float zr = pow( r,Power);
+		theta = theta*Power;
+		phi = phi*Power;
+		
+		// convert back to cartesian coordinates
+		z = zr*vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
+		z+=pos;
+	}
+	return 0.5*log(r)*r/dr;
+}
+
+float scaledMandelbulbDE(vec3 p, float scale) {
+    return mandelbulbDE(p / scale) * scale;
+}
+
+//returns distance to mandelbulb and color
+vec2 simpleRaymarch(vec3 from, vec3 direction, int max_steps, float FOVperPixel) {
+    int steps = 0;
+    float td = 0;
+    vec3 p = from;
+    while(steps++ < max_steps) {
+        p = from + direction * td;
+        float d = scaledMandelbulbDE(p + vec3(0, 0, -200), 150);
+        float min_dst = max(FOVperPixel * td, g_rmEpsilon);
+        if(d < min_dst)
+            break;
+        //if(d < g_rmEpsilon)
+        //    break;
+        td += d;
+    }
+    return vec2(td, 1.0 - float(steps) / max_steps);
+}
+
+
+//MODE 1 - sphere and infinite floor
+//MODE 2 - infinite XY spheres
+//MODE 3 - infinite XYZ spheres
+//MODE 5 - mandelbulb
+#define MODE 5
 
 void main()
 {
@@ -141,6 +159,7 @@ void main()
     float radius = sphere_radius;
 
     float fov_radians = fov / 180.0 * 3.14;
+    float FOVperPixel = 1.0 / max(g_resolution.x, g_resolution.y);
     float f = 0.5 / tan(fov / 2);
     float u = gl_FragCoord.x * 2.0 / g_resolution.x - 1.0;
     float v = gl_FragCoord.y * 2.0 / g_resolution.y - 1.0;
@@ -149,29 +168,31 @@ void main()
     vec3 rd = normalize(p - eye);
     
 
-    vec4 color = vec4(0.0); // Sky color
+    vec4 color = vec4(BACKGROUND_COLOR, 1); // Sky color
 
     float t = 0.0;
-    const int maxSteps = 64;
+    const int maxSteps = 128;
+
+    #if MODE != 5
     for(int i = 0; i < maxSteps; ++i)
     {
         vec3 p = ro + rd * t;
-        
+        float min_dst = max(FOVperPixel * t, g_rmEpsilon);
 
         #if MODE == 1
         float ds = sdSphere(p - sphere_position, radius); // Distance to sphere
         float dp = sdPlane(p - plane_position); // Distance to plane
         float d = opSmoothUnion(ds, dp, 1);
-        if(d < g_rmEpsilon)
+        if(d < g_rmEpsilon || )
         {
-            if(ds < g_rmEpsilon) 
+            if(ds < min_dst) 
             {
                 color = vec4(float(maxSteps - i) / 2 / maxSteps, 0, float(i) / maxSteps, 1); // Sphere color
                 //vec3 grad = gradApprox(p, sphere_position, radius);
                 //color = vec4(grad, 1);
                 break;
             }
-            if(dp > 0 && dp < g_rmEpsilon)
+            if(dp > 0 && dp < min_dst)
             {
                 color = vec4(floor_color(p), 1);
                 break;
@@ -180,21 +201,24 @@ void main()
         #endif
         #if MODE == 2
         float d1 = DExy(p);
-        float d2 = DExy(p + vec3(0, 0, 0.75));
-        float d = opSmoothUnion(d1, d2, 0.5);
-        if(d < g_rmEpsilon) {
-            vec3 normal = sphereNormal(p);
+        //float d2 = DExy(p + vec3(0, 0, 0.75));
+        //float d = opSmoothUnion(d1, d2, 0.5);
+        float d = DExy(p);
+        if(d < min_dst) {
+            vec3 normal = sphereNormalxy(p);
+            p.xyz -= d * normal;
             float cosinus = dot(normal, light_direction);
-            color = vec4(vec3(clamp(-cosinus, 0, 1)), 1);
+            color = vec4(vec3(clamp(-cosinus, 0, 1)), clamp((32-i)/32.0, 0, 1));
             break;
         }
         #endif
         #if MODE == 3
         float d = DExyz(p);
-        if(d < g_rmEpsilon) {
-            vec3 normal = sphereNormal(p);
+        if(d < min_dst) {
+            vec3 normal = sphereNormalxyz(p);
+            p.xyz -= d * normal;
             float cosinus = dot(normal, light_direction);
-            color = vec4(vec3(clamp(-cosinus, 0, 1)), 1);
+            color = vec4(vec3(clamp(-cosinus, 0, 0)), 1);
             break;
         }
         #endif
@@ -203,7 +227,7 @@ void main()
         float d = sceneInfo.y;
         float dst = d;
         // Ray has hit a surface
-        if (dst <= g_rmEpsilon) {
+        if (dst < min_dst) {
             float escapeIterations = sceneInfo.x;
             vec3 normal = EstimateNormal(ro - rd*g_rmEpsilon*2);
         
@@ -219,9 +243,13 @@ void main()
             break;
         }
         #endif
-
         t += d;
     }
+    #endif
+    #if MODE == 5
+    vec2 res = simpleRaymarch(ro, rd, 128, FOVperPixel);
+    color = vec4(res.y);
+    #endif
 
     glColor = color;
 }

@@ -14,6 +14,10 @@ void InputHandler::rotateCamera(Camera* camera, float xDelta, float yDelta, floa
 void InputHandler::handleMouse(Camera* camera, Window* w, Input* input, float dt)
 {
 	auto mp = input->mousePosition();
+	if (_first_camera_move) {
+		_first_camera_move = false;
+		_last_mouse_pos = mp;
+	}
 	auto offset = mp - _last_mouse_pos;
 	_last_mouse_pos = mp;
 	rotateCamera(camera, offset.x, offset.y, dt);

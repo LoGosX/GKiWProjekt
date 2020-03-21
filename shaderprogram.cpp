@@ -110,6 +110,11 @@ void ShaderProgram::uniform3f(const std::string& uniform_name, float v1, float v
 	glUniform3f(u(uniform_name), v1, v2, v3);
 }
 
+void ShaderProgram::uniformFloat(const std::string& uniform_name, float v)
+{
+	glUniform1f(u(uniform_name), v);
+}
+
 ShaderProgram::ShaderProgram(const char* vertexShaderFile,const char* geometryShaderFile,const char* fragmentShaderFile) {
 	//Wczytaj vertex shader
 	printf("Loading vertex shader...\n");

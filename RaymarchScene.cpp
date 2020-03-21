@@ -12,17 +12,17 @@ void RaymarchScene::setup()
 	raymarch_sphere->shader = ShaderProgram::raymarch2D;
 	raymarch_sphere->model = &Models::plane;
 }
-void RaymarchScene::update(double dt)
+void RaymarchScene::update()
 {
 
-	input_h->handleCamera(camera(), window(), input(), dt);
-	input_h->handleMouse(camera(), window(), input(), dt);
+	input_h->handleCamera(camera(), window(), input(), deltaTime());
+	input_h->handleMouse(camera(), window(), input(), deltaTime());
 	fprintf(stdout, "Position(%.3f %.3f %.3f), Rotation(%.3f %.3f %.3f)\n", camera()->position.x, camera()->position.y, camera()->position.z, camera()->rotation.x, camera()->rotation.y, camera()->rotation.z);
 }
 
 void RaymarchScene::draw()
 {
 	raymarch_sphere->shader->use();
-	raymarch_sphere->setShaderUniforms(*camera());
+	raymarch_sphere->setShaderUniforms(*camera(), time());
 	raymarch_sphere->model->drawSolid(false);
 }

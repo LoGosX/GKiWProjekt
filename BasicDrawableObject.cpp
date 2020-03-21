@@ -11,7 +11,7 @@ void boo() {
 
 }
 
-void BasicDrawableObject::setShaderUniforms(const Camera& camera)
+void BasicDrawableObject::setShaderUniforms(const Camera& camera, float time)
 {
 
 	shader->uniformMatrix4f("M", glm::value_ptr(entity.getModelMatrix()));

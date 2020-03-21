@@ -11,7 +11,7 @@ public:
 	using Scene::Scene;
 
 	void setup() override;
-	void update(double) override;
+	void update() override;
 	void draw() override;
 
 private:

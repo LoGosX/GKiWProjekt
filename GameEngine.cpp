@@ -35,7 +35,9 @@ void GameEngine::run()
 	auto window = _render_system->window();
 	window->clearColor(0.5, 0.5, 1, 0);
 	while (window->isOpen()) {
-		_scene_manager->getCurrentScene()->update(timer.tickTime());
+		_scene_manager->getCurrentScene()->setTime(timer.currentTime());
+		_scene_manager->getCurrentScene()->setDeltaTime(timer.tickTime());
+		_scene_manager->getCurrentScene()->update();
 
 		_window->clear();
 		_scene_manager->getCurrentScene()->draw();
