@@ -126,6 +126,9 @@
     <ClInclude Include="Event.h">
       <Filter>Pliki nagłówkowe\window and inputs</Filter>
     </ClInclude>
+    <ClInclude Include="Menger3.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="lodepng.cpp">

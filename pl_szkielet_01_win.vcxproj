@@ -32,6 +32,7 @@
     <ClInclude Include="Input.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="lodepng.h" />
+    <ClInclude Include="Menger3.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Raymarching2DSphereDrawableObject.h" />

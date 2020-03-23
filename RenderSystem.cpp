@@ -31,7 +31,7 @@ bool RenderSystem::initialize()
 	}
 
 	_window = new Window;
-	if (!_window->create(1200, 800, "OpenGL")) {
+	if (!_window->create(1200, 1200, "OpenGL")) {
 		fprintf(stderr, "Nie mo¿na stworzyæ okna.\n");
 		return false;
 	}

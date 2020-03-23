@@ -17,7 +17,7 @@ void Scene::setDeltaTime(float dt)
 	_dt = dt;
 }
 
-float Scene::time() {
+float Scene::getTime() {
 	return _t;
 }
 

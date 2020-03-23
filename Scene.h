@@ -17,7 +17,7 @@ protected:
 	Window* window();
 	Input* input();
 	Camera* camera();
-	float time();
+	float getTime();
 	float deltaTime();
 private:
 	float _t;

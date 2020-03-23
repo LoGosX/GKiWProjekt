@@ -9,9 +9,9 @@ class InputHandler
 {
 public:
 
-	void handleMouse(Camera* camera, Window* w, Input* input, float dt);
+	virtual void handleMouse(Camera* camera, Window* w, Input* input, float dt);
 
-	void handleCamera(Camera* camera, Window* window, Input* input, float dt);
+	virtual void handleCamera(Camera* camera, Window* window, Input* input, float dt);
 
 	float camera_speed{ 10 };
 	float camera_rotation_speed{ 0.5 };
