@@ -184,43 +184,84 @@ float radians(float degrees) {
     return degrees / 180 * 3.1415926535;
 }
 
-//scale=2
-//bailout=1000
-float Menger3(vec3 p){
-    float x = p.x;
-    float y = p.y;
-    float z = p.z;
-   float r=x*x+y*y+z*z;
-   float CX = 2, CY = 4.8, CZ = 1;
-   float scale = 1.3;
-   float bailout = 1000;
-   int i;
-   int MI = 1;
-   for(i=0;i<MI && r<bailout;i++){
-      vec3 rot = rotateY(vec3(x,y,z), radians(25));
-      x = abs(rot.x);
-      y = abs(rot.y);
-      z = abs(rot.z);
+float recursiveDE(vec3 z)
+{
+    vec3 Offset = vec3(1,1,1); //point from which we scale
+    float Scale = 2;
+    float r;
+    int n = 0;
+    int Iterations = 10;
+    while (n < Iterations) {
+        //these are three symmetry planes of tetrahedron
+       if(z.x+z.y<0) z.xy = -z.yx; // fold 1
+       if(z.x+z.z<0) z.xz = -z.zx; // fold 2
+       if(z.y+z.z<0) z.zy = -z.yz; // fold 3	
+       z = z*Scale - Offset*(Scale-1.0);
+       n++;
+    }
+    return (length(z) ) * pow(Scale, -float(n));
+}
 
-      if(x-y<0){float x1=y;y=x;x=x1;}
-      if(x-z<0){float x1=z;z=x;x=x1;}
-      if(y-z<0){float y1=z;z=y;y=y1;}
+float recursiveDE2(vec3 z)
+{
+    vec3 Offset = vec3(1,1,1); //point from which we scale
+    float Scale = 2;
+    float r;
+    int n = 0;
+    int Iterations = 16;
+    float angle1 = 0.1f, angle2 = 0.0f;
+    while (n < Iterations) {
+        z = rotateX(z, angle1);
+        //cubic symetry planes
+       z.x = abs(z.x);
+       z.y = abs(z.y);
+       z.z = abs(z.z);
+        z = rotateZ(z, angle1);
+       z = z*Scale - Offset*(Scale-1.0);
+       n++;
+    }
+    return (length(z) ) * pow(Scale, -float(n));
+}
 
-      rot = rotateY(vec3(x,y,z), 0);
-      x = rot.x;
-      y = rot.y;
-      z = rot.z;
-    
-      x=scale*x-CX*(scale-1);
-      y=scale*y-CY*(scale-1);
-      z=scale*z-CZ*(scale-1);
-      
-      //z=scale*z;
-      //if(z>0.5*CZ*(scale-1)) z-=CZ*(scale-1);
-      
-      r=x*x+y*y+z*z;
-   }
-   return (sqrt(x*x+y*y+z*z)-2)*pow(scale, -i);
+float sdBox( vec3 p, vec3 b )
+{
+  vec3 q = abs(p) - b;
+  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+}
+
+vec3 mengerFold(vec3 p) {
+      if(p.x-p.y<0){float x1=p.y;p.y=p.x;p.x=x1;}
+      if(p.x-p.z<0){float x1=p.z;p.z=p.x;p.x=x1;}
+      if(p.y-p.z<0){float y1=p.z;p.z=p.y;p.y=y1;}
+      return p;
+}
+
+float Menger3(vec3 p) {
+    int Iterations = 16;
+    //vec3 Offset = vec3(-2.12f, -2.75f, 0.49f);
+    //float Scale = 1.8f;
+    //float rotationX = sin(time / 15) / 10;
+    //float rotationZ = -0.12f;
+    float CX = 1, CY = 1, CZ = 1;
+    float Scale = 3f;
+    float rotationX = 0.0f;
+    float rotationY = 0.0f;
+    float rotationZ = 0.0F;
+    int n;
+    for(n = 0; n < Iterations; n++) {
+        p = rotateZ(p, rotationZ);
+        p = abs(p);
+        p = mengerFold(p);
+        p = rotateX(p, rotationX);
+
+        p.x = p.x * Scale  - CX * (Scale - 1);
+        p.y = p.y * Scale  - CY * (Scale - 1);
+        p.z = p.z * Scale;
+        if(p.z > 0.5 * CZ * (Scale - 1)){ p.z -= CZ * (Scale - 1);}
+
+    }
+    //return sdBox(p, vec3(6.f)) * pow(Scale, -float(n));
+    return length(p) * pow(Scale, - float(n));
 }
 
 //MODE 1 - sphere and infinite floor
@@ -252,8 +293,8 @@ vec2 simpleRaymarch(vec3 from, vec3 direction, int max_steps, float FOVperPixel)
         d = min(ds, dsc);
         #endif
         #if MODE == 7
-        float dm = sierpinskiDE(p);
-        //float dm = Menger3(p);
+        //float dm = sierpinskiDE(p);
+        float dm = Menger3(p);
         float ds = sdSphere(p - spherePosition, sphereRadius);
         float dsd = sdSphere(p - debugSpherePosition, debugSphereRadius);
         d = min(ds, dm);

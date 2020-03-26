@@ -2,6 +2,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/rotate_vector.hpp"
 #include <algorithm>
+#include <stack>
 
 /*
 glm::vec3 rotateX(glm::vec3 p, float a) {
@@ -175,85 +176,155 @@ glm::vec3 closestPointOnTetrahedron(glm::vec3 position) {
     return ans;
 }
 
+enum class OPERATION {
+    ROTATE_X,
+    ROTATE_Y,
+    ROTATE_Z,
+    SCALE,
+    SCALE_X,
+    SCALE_Y,
+    SCALE_Z,
+    SCALE_Z2,
+    SCALE_Z3,
+    CX,
+    CY,
+    CZ,
+    OFFSET,
+    ABS_X,
+    ABS_Y,
+    ABS_Z,
+    FOLD_1,
+    FOLD_2,
+    FOLD_3,
+    SWAP_XY,
+    SWAP_XZ,
+    SWAP_YZ
+};
+
 //scale=2
 //bailout=1000
 //kaleidoscopic distamce estimator. More at :http://www.fractalforums.com/sierpinski-gasket/kaleidoscopic-(escape-time-ifs)/
-float Menger3distance(float x, float y, float z, float CX = 2, float CY = 4.8, float CZ = 1) {
-    float r = x * x + y * y + z * z;
-    float scale = 1.3;
+glm::vec3 Menger3point(glm::vec3 z, float rotationX = 0, float rotationY = 0, float rotationZ = 0)
+{
+    //works without rotations :/
+    int Iterations = 16;
+    glm::vec3 Offset(1,1,1);
+    float Scale = 3;
+    float CX = 1, CY = 1, CZ = 1;
     float bailout = 1000;
-    int i;
-    int MI = 1;
-    for (i = 0; i < MI && r < bailout; i++) {
-        glm::vec3 rot = rotateY(glm::vec3(x, y, z), radians(25));
-        x = abs(rot.x);
-        y = abs(rot.y);
-        z = abs(rot.z);
+    float r = glm::dot(z,z), nx, nz, ny;
+    int n = 0;
+    std::stack<OPERATION> history;
+    while (n < Iterations /*&& r < bailout*/) {
+        z = rotateZ(z, rotationZ);
+        history.push(OPERATION::ROTATE_Z);
+        
+        //abs fold
+        if (z.x < 0) {
+            z.x = -z.x;
+            history.push(OPERATION::ABS_X);
+        }
+        if (z.y < 0) {
+            z.y = -z.y;
+            history.push(OPERATION::ABS_Y);
+        }
+        if (z.z < 0) {
+            z.z = -z.z;
+            history.push(OPERATION::ABS_Z);
+        }
 
-        if (x - y < 0) { float x1 = y; y = x; x = x1; }
-        if (x - z < 0) { float x1 = z; z = x; x = x1; }
-        if (y - z < 0) { float y1 = z; z = y; y = y1; }
+        //menger fold
+        if (z.x - z.y < 0) { std::swap(z.x, z.y); history.push(OPERATION::SWAP_XY); }
+        if (z.x - z.z < 0) { std::swap(z.x, z.z); history.push(OPERATION::SWAP_XZ); }
+        if (z.y - z.z < 0) { std::swap(z.y, z.z); history.push(OPERATION::SWAP_YZ); }
 
-        rot = rotateY(glm::vec3(x, y, z), 0);
-        x = rot.x;
-        y = rot.y;
-        z = rot.z;
+        z = rotateX(z, rotationX);
+        history.push(OPERATION::ROTATE_X);
 
-        x = scale * x - CX * (scale - 1.f);
-        y = scale * y - CY * (scale - 1.f);
-        z = scale * z - CZ * (scale - 1.f);
-        //z = scale * z;
-        //if (z > 0.5f * CZ * (scale - 1.f)) z -= CZ * (scale - 1.f);
-
-        r = x * x + y * y + z * z;
+        //scale wrt center CX,CY,CZ
+        z.x = z.x * Scale - CX * (Scale - 1.f);
+        history.push(OPERATION::SCALE_X);
+        z.y = z.y * Scale - CY * (Scale - 1.f);
+        history.push(OPERATION::SCALE_Y);
+        z.z = z.z * Scale;
+        history.push(OPERATION::SCALE_Z);
+        if (z.z > 0.5f * CZ * (Scale - 1.f)) { 
+            z.z -= CZ * (Scale - 1); 
+            history.push(OPERATION::SCALE_Z2);
+        }
+        r = glm::dot(z, z);
+        n++;
     }
-    return (sqrtf(x * x + y * y + z * z) - 2) * powf(scale, -i);
-}
-
-
-//returns pair of (DE, closest point)
-//TODO!
-std::pair<float, glm::vec3> Menger3Point(glm::vec3 p, float CX = 2, float CY = 4.8, float CZ = 1) {
-    float r = glm::dot(p, p);
-    float scale = 1.3;
-    float bailout = 1000;
-    float rotate1angle = 25;
-    float rotate2angle = 0;
-    int i;
-    int MI = 1;
-    //auto point = glm::vec3(0, 2, 0);
-    for (i = 0; i < MI && r < bailout; i++) {
-        p = rotateY(p, radians(rotate1angle));
-        p = glm::abs(p);
-
-        if (p.x - p.y < 0) {
-            float x1 = p.y; p.y = p.x; p.x = x1;
-        }
-        if (p.x - p.z < 0) {
-            float x1 = p.z; p.z = p.x; p.x = x1;
-        }
-        if (p.y - p.z < 0) {
-            float y1 = p.z; p.z = p.y; p.y = y1;
-        }
-
-        p = rotateY(p, radians(rotate2angle));
-        p = p * scale - glm::vec3(CX, CY, 0) * (scale - 1.f);
-        /*
-        x = scale * x - CX * (scale - 1.f);
-        y = scale * y - CY * (scale - 1.f);
-        //z = scale * z - CZ * (scale - 1.f);
-        z = scale * z;
-        */
-        if (p.z > 0.5f * CZ * (scale - 1.f)) p.z -= CZ * (scale - 1.f);
-
-        r = glm::dot(p, p);
-    }
-    float distance = (glm::length(p) - 2) * powf(scale, -i);
     
-    return { distance, p };
+
+    //does not work with rotations
+    float q1 = 6.0F;
+    float q2 = -6.0F;
+    z.x = std::max(std::min(z.x, q1), q2);
+    z.y = std::max(std::min(z.y, q1), q2);
+    z.z = std::max(std::min(z.z, q1), q2);
+
+
+    while (!history.empty()) {
+        auto action = history.top(); history.pop();
+        switch (action)
+        {
+        case OPERATION::SCALE_X:
+            z.x = z.x + CX * (Scale - 1.f);
+            z.x = z.x / Scale;
+            break;
+        case OPERATION::SCALE_Y:
+            z.y = z.y + CY * (Scale - 1.f);
+            z.y = z.y / Scale;
+            break;
+        case OPERATION::SCALE_Z:
+            z.z = z.z / Scale;
+            break;
+        case OPERATION::SCALE_Z2:
+            z.z = z.z + CZ * (Scale - 1);
+            break;
+        case OPERATION::OFFSET:
+            z -= Offset;
+            break;
+        case OPERATION::ROTATE_X:
+            z = rotateX(z, -rotationX);
+            break;
+        case OPERATION::ROTATE_Y:
+            z = rotateY(z, -rotationY);
+            break;
+        case OPERATION::ROTATE_Z:
+            z = rotateZ(z, -rotationZ);
+            break;
+        case OPERATION::ABS_X:
+            z.x = -z.x;
+            break;
+        case OPERATION::ABS_Y:
+            z.y = -z.y;
+            break;
+        case OPERATION::ABS_Z:
+            z.z = -z.z;
+            break;
+        case OPERATION::SWAP_XY:
+            std::swap(z.x, z.y);
+            break;
+        case OPERATION::SWAP_XZ:
+            std::swap(z.x, z.z);
+            break;
+        case OPERATION::SWAP_YZ:
+            std::swap(z.y, z.z);
+            break;
+        default:
+            break;
+        }
+    }
+    return z;
 }
 
-#include <stack>
+std::pair<float, glm::vec3> Menger3(glm::vec3 p, float rotationX = 0, float rotationY = 0, float rotationZ = 0) {
+    auto m3 = Menger3point(p);
+    return { glm::distance(p, m3), m3 };
+}
+
 glm::vec3 sierpinski3point(glm::vec3 z)
 {
     int Iterations = 16;
@@ -368,4 +439,11 @@ float sierpinski3dist(glm::vec3 z)
         n++;
     }
     return (length(z)) * pow(Scale, -float(n));
+}
+
+
+std::pair<float, glm::vec3> sierpinski3(glm::vec3 p) {
+    //returns pair of distance and closest point to sierpinski fractal
+    auto s = sierpinski3point(p);
+    return { glm::distance(s, p), s };
 }

@@ -83,32 +83,61 @@ void updateSphereWave(float dt) {
 
 #include "Menger3.h"
 
+bool sphereGrounded = false;
+glm::vec3 sphereJumpDir = { 0,0,0 };
 void updateSphereSierpinski(float dt) {
 	sphereVelocity += grav * dt;
 	spherePosition += sphereVelocity * dt;
-	sphereVelocity = glm::normalize(sphereVelocity) * fmin(0.1f, glm::length(sphereVelocity));
+	//sphereVelocity = glm::normalize(sphereVelocity) * fmin(0.1f, glm::length(sphereVelocity));
 
-	float distance = sierpinski3dist(spherePosition);
+	auto pair = sierpinski3(spherePosition);
 	glm::vec3 gravv = grav;
-	while (distance < sphereRadius) {
-		auto point = sierpinski3point(spherePosition);
+	float distance = pair.first;
+	for (int i = 0; distance < sphereRadius && i < 5; i++) {
+		auto point = pair.second;
 		float intersection = sphereRadius - distance;
 		glm::vec3 dir = glm::normalize(spherePosition - point);
-		spherePosition = point + dir * sphereRadius;
-		sphereVelocity -= dir * glm::dot(dir, sphereVelocity) * sphereMass * dt;
+		spherePosition += dir * intersection;
+		sphereVelocity += dir * glm::dot(dir, -sphereVelocity) * 2.f * dt;
 
-		distance = sierpinski3dist(spherePosition);
+		pair = sierpinski3(spherePosition);
+		distance = pair.first;
+		sphereGrounded = true;
+		sphereJumpDir = glm::vec3(0, 1, 0) * std::max(0.f, glm::dot(dir, glm::vec3(0, 1, 0)));
 	}
 }
 void updateSphereSierpinski3(float dt) {
 	if (nt < 0 && false) {
 		nt = 10;
-		spherePosition = { 0, 3.f, 0.5f};
+		spherePosition = { 1.f, 3.f, 1.f};
 		sphereVelocity = { 0, 0, 0 };
 	}
 	nt -= dt;
 
 	updateSphereSierpinski(dt);
+}
+
+void updateSphereMenger(float dt, float time) {
+
+	sphereVelocity += grav * dt;
+	spherePosition += sphereVelocity * dt;
+	//sphereVelocity = glm::normalize(sphereVelocity) * fmin(0.1f, glm::length(sphereVelocity));
+	float rotX = 0;
+	auto pair = Menger3(spherePosition, rotX);
+	glm::vec3 gravv = grav;
+	float distance = pair.first;
+	for (int i = 0; distance < sphereRadius && i < 5; i++) {
+		auto point = pair.second;
+		float intersection = sphereRadius - distance;
+		glm::vec3 dir = glm::normalize(spherePosition - point);
+		spherePosition += dir * intersection;
+		sphereVelocity += dir * glm::dot(dir, -sphereVelocity) * 2.f * dt;
+
+		pair = Menger3(spherePosition, rotX);
+		distance = pair.first;
+		sphereGrounded = true;
+		sphereJumpDir = glm::vec3(0, 1, 0) * std::max(0.f, glm::dot(dir, glm::vec3(0, 1, 0)));
+	}
 }
 
 void RaymarchScene::setup()
@@ -124,10 +153,11 @@ void RaymarchScene::setup()
 
 void RaymarchScene::update()
 {
-	updateSphereSierpinski3(deltaTime());
+	//updateSphereSierpinski(deltaTime());
+	updateSphereMenger(deltaTime(), getTime());
 	input_h->handleCamera(camera(), window(), input(), deltaTime());
 	input_h->handleMouse(camera(), window(), input(), deltaTime());
-	float speed = 0.5f;
+	float speed = 0.1f;
 	if (input()->keyPressed(GLFW_KEY_W)) {
 		sphereVelocity += camera()->forwardVector() * speed * deltaTime();
 	}if (input()->keyPressed(GLFW_KEY_S)) {
@@ -136,17 +166,23 @@ void RaymarchScene::update()
 		sphereVelocity -= camera()->rightVector() * speed * deltaTime();
 	}if (input()->keyPressed(GLFW_KEY_D)) {
 		sphereVelocity += camera()->rightVector() * speed * deltaTime();
-	}if (input()->keyPressed(GLFW_KEY_SPACE)) {
-		sphereVelocity += glm::vec3(0, 1, 0) * speed * deltaTime();
+	}if (input()->keyPressed(GLFW_KEY_SPACE) && sphereGrounded) {
+		sphereVelocity += sphereJumpDir * speed * 1.f;
 	}if (input()->keyPressed(GLFW_KEY_LEFT_CONTROL)) {
 		sphereVelocity -= glm::vec3(0, 1, 0) * speed * deltaTime();
 	}if (input()->keyPressed(GLFW_KEY_R)) {
-		spherePosition = { 0, 1.25, 0 };
+		spherePosition = { 1.f, 1.5f + sphereRadius, 0.f };;
 		sphereVelocity = { 0, 0, 0 };
 	}
 	camera()->position = spherePosition - camera()->forwardVector() * 5.f * sphereRadius;
-	//debugSpherePosition = sierpinski3point(spherePosition);
+	//debugSpherePosition = { 0,0,0 };
+	//debugSpherePosition = sierpinski3point(camera()->position);
+	//spherePosition = { 0,0,0 };
+	//sphereRadius = 0.01f;
+	//debugSpherePosition = spherePosition;		
+	//debugSpherePosition = Menger3point(camera()->position);
 	//fprintf(stdout, "Position(%.3f %.3f %.3f), Rotation(%.3f %.3f %.3f)\n", camera()->position.x, camera()->position.y, camera()->position.z, camera()->rotation.x, camera()->rotation.y, camera()->rotation.z);
+	sphereGrounded = false;
 }
 
 void RaymarchScene::draw()
